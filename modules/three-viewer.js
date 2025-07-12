@@ -232,7 +232,7 @@ export class ThreeViewer {
         const maxDim = Math.max(size.x, size.y, size.z);
         
         const fov = this.camera.fov * (Math.PI / 180);
-        const cameraZ = Math.abs(maxDim / Math.sin(fov / 2)) * 2;
+        const cameraZ = Math.abs(maxDim / Math.sin(fov / 2)) * 1.2; // Reduced from 2 to 1.2 for closer view
         
         this.camera.position.set(cameraZ * 0.7, cameraZ * 0.7, cameraZ * 0.7);
         this.camera.lookAt(0, 0, 0);
