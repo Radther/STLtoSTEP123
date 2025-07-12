@@ -21,6 +21,7 @@ from js import Blob, document
 from js import window
 from pyodide.ffi import to_js
 import io
+import os
 print("JavaScript interfaces imported")
 
 print("Attempting to import build123d...")
@@ -32,4 +33,3 @@ except ImportError as e:
     import sys
     print("Available packages:")
     print([pkg for pkg in sys.modules.keys() if 'build' in pkg.lower()])
-    

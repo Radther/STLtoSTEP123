@@ -1,148 +1,435 @@
-// Import all modules
-import { ThreeViewer } from './modules/three-viewer.js';
-import { ConsoleManager } from './modules/console-manager.js';
-import { StatusManager } from './modules/status-manager.js';
+// Import only what we need
 import { PythonRuntime } from './modules/python-runtime.js';
-import { ParameterHandler } from './modules/parameter-handler.js';
-import { FileDownloads } from './modules/file-downloads.js';
-import { UIControls } from './modules/ui-controls.js';
 
-// Main Application Class
-class WebAssmPyApp {
+// STL to STEP Converter Application
+class STLToSTEPConverter {
     constructor() {
         this.isInitialized = false;
+        this.currentFile = null;
+        this.convertedFile = null;
+        
+        console.log('STL Converter: Initializing...');
+        
+        this.initializeElements();
         this.initializeModules();
         this.setupEventListeners();
+        this.initialize();
+    }
+
+    initializeElements() {
+        console.log('STL Converter: Finding DOM elements...');
+        
+        // UI Elements
+        this.dropZone = document.getElementById('dropZone');
+        this.fileInput = document.getElementById('fileInput');
+        this.fileInfo = document.getElementById('fileInfo');
+        this.fileName = document.getElementById('fileName');
+        this.fileSize = document.getElementById('fileSize');
+        this.removeFileBtn = document.getElementById('removeFile');
+        this.generateBtn = document.getElementById('generateBtn');
+        this.generateIcon = document.getElementById('generateIcon');
+        this.generateText = document.getElementById('generateText');
+        this.downloadSection = document.getElementById('downloadSection');
+        this.downloadBtn = document.getElementById('downloadBtn');
+        this.statusBar = document.getElementById('statusBar');
+        this.statusIcon = document.getElementById('statusIcon');
+        this.statusText = document.getElementById('statusText');
+        this.previewArea = document.getElementById('previewArea');
+        
+        // Check if critical elements exist
+        if (!this.dropZone) {
+            console.error('STL Converter: Drop zone element not found!');
+        } else {
+            console.log('STL Converter: Drop zone found');
+        }
+        
+        if (!this.fileInput) {
+            console.error('STL Converter: File input element not found!');
+        } else {
+            console.log('STL Converter: File input found');
+        }
     }
 
     initializeModules() {
-        // Initialize modules in dependency order
-        this.consoleManager = new ConsoleManager();
-        this.statusManager = new StatusManager(this.consoleManager);
-        this.pythonRuntime = new PythonRuntime(this.statusManager);
-        this.parameterHandler = new ParameterHandler(this.statusManager);
-        this.fileDownloads = new FileDownloads();
-        this.uiControls = new UIControls();
+        console.log('STL Converter: Initializing modules...');
         
-        // Initialize Three.js viewer
-        const threeContainer = document.getElementById('three-container');
-        const viewerPlaceholder = document.getElementById('viewer-placeholder');
-        this.threeViewer = new ThreeViewer(threeContainer, viewerPlaceholder);
+        // Create a simple status manager for the python runtime
+        const simpleStatusManager = {
+            updateStatus: (message, title, className) => {
+                console.log('Python Runtime:', message);
+                this.showStatus(message, 'loading');
+            },
+            consoleManager: {
+                appendToConsole: (message) => console.log('Console:', message),
+                appendToPythonConsole: (message) => console.log('Python:', message),
+                clearActiveConsole: () => console.log('Console cleared')
+            }
+        };
         
-        // Cross-wire dependencies
-        this.fileDownloads.parameterHandler = this.parameterHandler;
-        this.parameterHandler.onGenerationTrigger = () => this.runPythonCode();
-        
-        // DOM elements
-        this.runButton = document.getElementById('run-code');
-        this.runText = document.getElementById('run-text');
-        this.clearOutputButton = document.getElementById('clear-output');
-        this.resetViewButton = document.getElementById('reset-view');
+        // Initialize python runtime with our simple status manager
+        this.pythonRuntime = new PythonRuntime(simpleStatusManager);
     }
 
     setupEventListeners() {
-        this.runButton.addEventListener('click', () => this.runPythonCode());
-        this.clearOutputButton.addEventListener('click', () => this.clearOutput());
-        this.resetViewButton.addEventListener('click', () => this.threeViewer.resetCameraView());
+        console.log('STL Converter: Setting up event listeners...');
+        
+        if (!this.dropZone || !this.fileInput) {
+            console.error('STL Converter: Cannot set up event listeners - missing DOM elements');
+            return;
+        }
+        
+        // File input change
+        this.fileInput.addEventListener('change', (e) => {
+            console.log('STL Converter: File input changed');
+            this.handleFileSelect(e);
+        });
+        
+        // Drag and drop events
+        this.dropZone.addEventListener('dragover', (e) => {
+            console.log('STL Converter: Drag over detected');
+            this.handleDragOver(e);
+        });
+        
+        this.dropZone.addEventListener('dragenter', (e) => {
+            console.log('STL Converter: Drag enter detected');
+            e.preventDefault();
+            this.dropZone.classList.add('border-primary-500', 'bg-primary-500/5');
+        });
+        
+        this.dropZone.addEventListener('dragleave', (e) => {
+            console.log('STL Converter: Drag leave detected');
+            this.handleDragLeave(e);
+        });
+        
+        this.dropZone.addEventListener('drop', (e) => {
+            console.log('STL Converter: Drop detected');
+            this.handleDrop(e);
+        });
+        
+        // Click to browse
+        this.dropZone.addEventListener('click', () => {
+            console.log('STL Converter: Drop zone clicked');
+            this.fileInput.click();
+        });
+        
+        // Remove file
+        if (this.removeFileBtn) {
+            this.removeFileBtn.addEventListener('click', () => this.removeFile());
+        }
+        
+        // Generate button
+        if (this.generateBtn) {
+            this.generateBtn.addEventListener('click', () => this.convertFile());
+        }
+        
+        // Download button
+        if (this.downloadBtn) {
+            this.downloadBtn.addEventListener('click', () => this.downloadFile());
+        }
+        
+        console.log('STL Converter: Event listeners set up complete');
     }
 
     async initialize() {
         try {
-            // Load parameters first for immediate UI feedback
-            await this.parameterHandler.loadParameterDefinitionsEarly();
+            console.log('STL Converter: Starting initialization...');
+            this.showStatus('Initializing Python environment...', 'loading');
             
-            // Initialize Three.js viewer
-            this.threeViewer.init();
-            
-            // Then initialize Python runtime
+            // Use existing python runtime initialization
             await this.pythonRuntime.initialize();
             
-            // Skip loading the script if already loaded during early parameter loading
-            if (!this.parameterHandler.basePythonScript) {
-                await this.parameterHandler.loadBasePythonScript();
-            }
+            // Load the conversion script
+            await this.loadConversionScript();
             
             this.isInitialized = true;
-            this.runButton.disabled = false;
-            this.runText.innerHTML = 'Generate Model';
-            
-            // Auto-run the first generation
-            this.runPythonCode();
+            this.showStatus('Ready for STL to STEP conversion!', 'success');
+            console.log('STL Converter: Initialization complete!');
             
         } catch (error) {
-            console.error('Failed to initialize application:', error);
-            this.statusManager.updateStatus('❌ Failed to initialize application: ' + error.message, 'Initialization Failed ❌', 'text-sm status-error');
-            this.runText.innerHTML = 'Initialization Failed';
+            console.error('STL Converter: Failed to initialize:', error);
+            this.showStatus('Failed to initialize Python environment', 'error');
         }
     }
 
-    async runPythonCode() {
-        if (!this.isInitialized) {
-            alert('Python environment is not ready yet. Please wait...');
-            return;
+    async loadConversionScript() {
+        try {
+            console.log('STL Converter: Loading conversion script...');
+            this.showStatus('Loading conversion script...', 'loading');
+            
+            // Load the existing generate.py file
+            const response = await fetch('./generate.py');
+            const generateScript = await response.text();
+            
+            // Store the script for later use
+            this.generateScript = generateScript;
+            
+            console.log('STL Converter: Conversion script loaded successfully');
+            
+        } catch (error) {
+            console.error('STL Converter: Failed to load conversion script:', error);
+            throw error;
         }
+    }
 
-        if (!this.parameterHandler.basePythonScript) {
-            alert('Generation script not loaded. Please refresh the page.');
-            return;
-        }
+    handleDragOver(e) {
+        console.log('STL Converter: Handling drag over');
+        e.preventDefault();
+        e.stopPropagation();
+        this.dropZone.classList.add('border-primary-500', 'bg-primary-500/5');
+    }
 
-        // Show loading state
-        this.runButton.disabled = true;
-        this.runText.innerHTML = '<div class="loading-spinner"></div>Generating...';
-        this.runText.parentElement.classList.add('loading');
+    handleDragLeave(e) {
+        console.log('STL Converter: Handling drag leave');
+        e.preventDefault();
+        e.stopPropagation();
         
-        // Close mobile sidebar if open
-        this.uiControls.closeSidebarIfOpen();
+        // Only remove classes if we're actually leaving the drop zone
+        if (!this.dropZone.contains(e.relatedTarget)) {
+            this.dropZone.classList.remove('border-primary-500', 'bg-primary-500/5');
+        }
+    }
+
+    handleDrop(e) {
+        console.log('STL Converter: Handling drop');
+        e.preventDefault();
+        e.stopPropagation();
+        
+        this.dropZone.classList.remove('border-primary-500', 'bg-primary-500/5');
+        
+        const files = e.dataTransfer.files;
+        console.log('STL Converter: Files dropped:', files.length);
+        
+        if (files.length > 0) {
+            console.log('STL Converter: Processing file:', files[0].name);
+            this.processFile(files[0]);
+        } else {
+            console.log('STL Converter: No files in drop event');
+        }
+    }
+
+    handleFileSelect(e) {
+        console.log('STL Converter: File selected via input');
+        const file = e.target.files[0];
+        if (file) {
+            console.log('STL Converter: Processing selected file:', file.name);
+            this.processFile(file);
+        }
+    }
+
+    processFile(file) {
+        console.log('STL Converter: Processing file:', file.name, 'Size:', file.size);
+        
+        // Validate file type
+        if (!file.name.toLowerCase().endsWith('.stl')) {
+            console.log('STL Converter: Invalid file type');
+            this.showStatus('Please select a valid STL file', 'error');
+            return;
+        }
+
+        // Validate file size (limit to 50MB)
+        if (file.size > 50 * 1024 * 1024) {
+            console.log('STL Converter: File too large');
+            this.showStatus('File size too large. Please select a file smaller than 50MB', 'error');
+            return;
+        }
+
+        console.log('STL Converter: File validation passed');
+        this.currentFile = file;
+        this.displayFileInfo(file);
+        this.generateBtn.disabled = !this.isInitialized;
+        this.hideStatus();
+    }
+
+    displayFileInfo(file) {
+        console.log('STL Converter: Displaying file info');
+        this.fileName.textContent = file.name;
+        this.fileSize.textContent = this.formatFileSize(file.size);
+        this.fileInfo.classList.remove('hidden');
+        this.downloadSection.classList.add('hidden');
+    }
+
+    removeFile() {
+        console.log('STL Converter: Removing file');
+        this.currentFile = null;
+        this.convertedFile = null;
+        this.fileInfo.classList.add('hidden');
+        this.downloadSection.classList.add('hidden');
+        this.generateBtn.disabled = true;
+        this.fileInput.value = '';
+        this.hideStatus();
+    }
+
+    async convertFile() {
+        console.log('STL Converter: Starting conversion');
+        
+        if (!this.currentFile || !this.isInitialized) {
+            this.showStatus('Please select a file and wait for initialization', 'error');
+            return;
+        }
+
+        if (!this.pythonRuntime.pyodide) {
+            this.showStatus('Python runtime not ready', 'error');
+            return;
+        }
 
         try {
-            // Get current parameter values
-            const params = this.parameterHandler.getParameterValues();
+            // Update UI for conversion process
+            this.generateBtn.disabled = true;
+            this.generateText.textContent = 'Converting...';
+            this.generateIcon.classList.add('animate-spin');
+            this.showStatus('Converting STL to STEP...', 'loading');
+
+            // Read file as array buffer
+            console.log('STL Converter: Reading STL file...');
+            const arrayBuffer = await this.readFileAsArrayBuffer(this.currentFile);
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            // Save the STL file to Pyodide's file system
+            console.log('STL Converter: Saving STL file to browser file system...');
+            const stlFileName = this.currentFile.name;
+            this.pythonRuntime.pyodide.FS.writeFile(stlFileName, uint8Array);
+
+            // Create a modified version of generate.py that works with our file
+            const modifiedScript = this.generateScript.replace(
+                /stl_filename = Path\(['"].*?['"]\)/,
+                `stl_filename = Path('${stlFileName}')`
+            );
+
+            console.log('STL Converter: Running conversion script...');
+            // Run the modified generate.py script
+            await this.pythonRuntime.pyodide.runPythonAsync(modifiedScript);
+
+            // Read the resulting STEP file
+            const stepFileName = stlFileName.replace('.stl', '.step');
+            console.log('STL Converter: Reading converted STEP file...');
             
-            // Create parameterized script
-            const code = this.parameterHandler.createParameterizedScript(params);
-            
-            // Run the Python code
-            await this.pythonRuntime.runCode(code);
-            
-            // Check if model data is available (supports both single and multiple parts)
-            if (window.partsData) {
-                const partsData = window.partsData;
-                this.fileDownloads.updateCurrentParts(partsData);
-                
-                this.threeViewer.loadParts(partsData);
-                this.fileDownloads.enableDownloadButtons();
-                this.resetViewButton.disabled = false;
-                
-                this.statusManager.updateStatus(
-                    `🎉 Success! Generated ${partsData.length} parts for 3D viewer - Model generated successfully!`, 
-                    `Model generated successfully! 🎉 (${partsData.length} parts)`, 
-                    'text-sm status-success'
-                );
-                
-            } else {
-                this.consoleManager.appendToConsole('❌ No model data generated');
-                throw new Error('No model data generated');
+            const stepData = this.pythonRuntime.pyodide.FS.readFile(stepFileName);
+
+            // Store converted file data
+            this.convertedFile = {
+                data: stepData,
+                name: stepFileName
+            };
+
+            // Clean up the files from Pyodide's file system
+            try {
+                this.pythonRuntime.pyodide.FS.unlink(stlFileName);
+                this.pythonRuntime.pyodide.FS.unlink(stepFileName);
+            } catch (cleanupError) {
+                console.log('STL Converter: File cleanup error (non-critical):', cleanupError);
             }
+
+            // Show success and enable download
+            this.showStatus('Conversion completed successfully!', 'success');
+            this.downloadSection.classList.remove('hidden');
             
+            console.log('STL Converter: Conversion completed successfully');
+
         } catch (error) {
-            this.consoleManager.appendToConsole(`Runtime Error: ${error.message}`);
-            this.statusManager.updateStatus(`❌ Outer Runtime Error: ${error.message}`, 'Generation failed ❌', 'text-sm status-error');
+            console.error('STL Converter: Conversion error:', error);
+            this.showStatus(`Conversion failed: ${error.message}`, 'error');
         } finally {
             // Reset button state
-            this.runButton.disabled = false;
-            this.runText.innerHTML = 'Generate Model';
-            this.runText.parentElement.classList.remove('loading');
+            this.generateBtn.disabled = false;
+            this.generateText.textContent = 'Convert to STEP';
+            this.generateIcon.classList.remove('animate-spin');
         }
     }
 
-    clearOutput() {
-        this.consoleManager.clearActiveConsole();
+    downloadFile() {
+        console.log('STL Converter: Downloading file');
+        
+        if (!this.convertedFile) {
+            this.showStatus('No converted file available', 'error');
+            return;
+        }
+
+        try {
+            // Create blob and download
+            const blob = new Blob([this.convertedFile.data], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = this.convertedFile.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+            
+            this.showStatus('File downloaded successfully!', 'success');
+            console.log('STL Converter: File downloaded successfully');
+        } catch (error) {
+            console.error('STL Converter: Download error:', error);
+            this.showStatus('Download failed', 'error');
+        }
+    }
+
+    readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    showStatus(message, type) {
+        if (!this.statusBar || !this.statusText || !this.statusIcon) {
+            console.log('STL Converter: Status elements not found, logging to console:', message);
+            return;
+        }
+        
+        this.statusText.textContent = message;
+        this.statusBar.classList.remove('hidden');
+        
+        // Update icon based on type
+        this.statusIcon.innerHTML = '';
+        this.statusIcon.className = 'w-5 h-5';
+        
+        switch (type) {
+            case 'loading':
+                this.statusIcon.innerHTML = `
+                    <svg class="animate-spin text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                `;
+                break;
+            case 'success':
+                this.statusIcon.innerHTML = `
+                    <svg class="text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                `;
+                break;
+            case 'error':
+                this.statusIcon.innerHTML = `
+                    <svg class="text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                `;
+                break;
+        }
+    }
+
+    hideStatus() {
+        if (this.statusBar) {
+            this.statusBar.classList.add('hidden');
+        }
     }
 }
 
 // Initialize the application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new WebAssmPyApp();
-    app.initialize();
+    console.log('DOM loaded, initializing STL Converter...');
+    window.stlConverter = new STLToSTEPConverter();
 }); 
