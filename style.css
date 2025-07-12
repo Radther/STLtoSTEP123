@@ -9,8 +9,7 @@
 
 html, body {
     width: 100%;
-    height: 100%;
-    overflow: hidden;
+    min-height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
@@ -293,7 +292,6 @@ button:active {
 /* Force full screen layout */
 body {
     background: #111827 !important;
-    overflow: hidden !important;
 }
 
 /* Prevent any default Tailwind or browser styles from interfering */

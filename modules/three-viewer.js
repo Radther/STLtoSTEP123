@@ -21,20 +21,25 @@ export class ThreeViewer {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x111827); // Match CSS background
         
-        // Create camera with proper aspect ratio for full screen
-        const aspect = window.innerWidth / window.innerHeight;
+        // Get container dimensions
+        const containerRect = this.container.getBoundingClientRect();
+        const containerWidth = containerRect.width || 800;
+        const containerHeight = containerRect.height || 400;
+        
+        // Create camera with proper aspect ratio for container
+        const aspect = containerWidth / containerHeight;
         this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
         this.camera.position.set(100, 100, 100);
         
-        // Create renderer with full screen dimensions
+        // Create renderer with container dimensions
         this.renderer = new THREE.WebGLRenderer({ 
             antialias: true,
             alpha: true,  // Enable alpha for transparency support
             powerPreference: "high-performance"
         });
         
-        // Force full screen sizing
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        // Size to container
+        this.renderer.setSize(containerWidth, containerHeight);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -43,12 +48,12 @@ export class ThreeViewer {
         // Enable proper sorting for transparency
         this.renderer.sortObjects = true;
         
-        // Ensure canvas fills full screen
+        // Ensure canvas fills container
         this.renderer.domElement.style.position = 'absolute';
         this.renderer.domElement.style.top = '0';
         this.renderer.domElement.style.left = '0';
-        this.renderer.domElement.style.width = '100vw';
-        this.renderer.domElement.style.height = '100vh';
+        this.renderer.domElement.style.width = '100%';
+        this.renderer.domElement.style.height = '100%';
         this.renderer.domElement.style.zIndex = '1';
         this.renderer.domElement.style.pointerEvents = 'auto';
         
@@ -94,18 +99,19 @@ export class ThreeViewer {
     }
 
     onWindowResize() {
-        if (!this.camera || !this.renderer) return;
+        if (!this.camera || !this.renderer || !this.container) return;
         
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const containerRect = this.container.getBoundingClientRect();
+        const width = containerRect.width || 800;
+        const height = containerRect.height || 400;
         
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
         
-        // Ensure canvas maintains full screen
-        this.renderer.domElement.style.width = '100vw';
-        this.renderer.domElement.style.height = '100vh';
+        // Ensure canvas maintains container size
+        this.renderer.domElement.style.width = '100%';
+        this.renderer.domElement.style.height = '100%';
     }
 
     animate() {
@@ -188,8 +194,8 @@ export class ThreeViewer {
         this.renderer.domElement.style.position = 'absolute';
         this.renderer.domElement.style.top = '0';
         this.renderer.domElement.style.left = '0';
-        this.renderer.domElement.style.width = '100vw';
-        this.renderer.domElement.style.height = '100vh';
+        this.renderer.domElement.style.width = '100%';
+        this.renderer.domElement.style.height = '100%';
         this.renderer.domElement.style.zIndex = '1';
         this.renderer.domElement.style.pointerEvents = 'auto';
         this.renderer.domElement.style.display = 'block';

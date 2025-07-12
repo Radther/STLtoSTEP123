@@ -1,5 +1,6 @@
 // Import only what we need
 import { PythonRuntime } from './modules/python-runtime.js';
+import { ThreeViewer } from './modules/three-viewer.js';
 
 // STL to STEP Converter Application
 class STLToSTEPConverter {
@@ -34,7 +35,12 @@ class STLToSTEPConverter {
         this.statusBar = document.getElementById('statusBar');
         this.statusIcon = document.getElementById('statusIcon');
         this.statusText = document.getElementById('statusText');
-        this.previewArea = document.getElementById('previewArea');
+        this.loadingScreen = document.getElementById('loadingScreen');
+        this.mainInterface = document.getElementById('mainInterface');
+        this.previewSection = document.getElementById('previewSection');
+        this.previewContainer = document.getElementById('previewContainer');
+        this.previewPlaceholder = document.getElementById('previewPlaceholder');
+        this.generateSection = document.getElementById('generateSection');
         
         // Check if critical elements exist
         if (!this.dropZone) {
@@ -68,6 +74,9 @@ class STLToSTEPConverter {
         
         // Initialize python runtime with our simple status manager
         this.pythonRuntime = new PythonRuntime(simpleStatusManager);
+        
+        // Initialize 3D viewer
+        this.threeViewer = new ThreeViewer(this.previewContainer, this.previewPlaceholder);
     }
 
     setupEventListeners() {
@@ -133,7 +142,9 @@ class STLToSTEPConverter {
     async initialize() {
         try {
             console.log('STL Converter: Starting initialization...');
-            this.showStatus('Initializing Python environment...', 'loading');
+            
+            // Ensure loading screen is shown and main interface is hidden
+            this.showLoadingScreen();
             
             // Use existing python runtime initialization
             await this.pythonRuntime.initialize();
@@ -142,11 +153,23 @@ class STLToSTEPConverter {
             await this.loadConversionScript();
             
             this.isInitialized = true;
+            
+            // Hide loading screen and show main interface
+            this.hideLoadingScreen();
+            this.showMainInterface();
+            
+            // Show generate section if file is already loaded
+            if (this.currentFile) {
+                this.showGenerateSection();
+            }
+            
             this.showStatus('Ready for STL to STEP conversion!', 'success');
             console.log('STL Converter: Initialization complete!');
             
         } catch (error) {
             console.error('STL Converter: Failed to initialize:', error);
+            this.hideLoadingScreen();
+            this.showMainInterface();
             this.showStatus('Failed to initialize Python environment', 'error');
         }
     }
@@ -216,7 +239,7 @@ class STLToSTEPConverter {
         }
     }
 
-    processFile(file) {
+    async processFile(file) {
         console.log('STL Converter: Processing file:', file.name, 'Size:', file.size);
         
         // Validate file type
@@ -235,8 +258,19 @@ class STLToSTEPConverter {
 
         console.log('STL Converter: File validation passed');
         this.currentFile = file;
+        
+        // Show preview section and display file info
         this.displayFileInfo(file);
-        this.generateBtn.disabled = !this.isInitialized;
+        this.showPreviewSection();
+        
+        // Load 3D preview
+        await this.load3DPreview(file);
+        
+        // Show generate section if initialized
+        if (this.isInitialized) {
+            this.showGenerateSection();
+        }
+        
         this.hideStatus();
     }
 
@@ -244,7 +278,6 @@ class STLToSTEPConverter {
         console.log('STL Converter: Displaying file info');
         this.fileName.textContent = file.name;
         this.fileSize.textContent = this.formatFileSize(file.size);
-        this.fileInfo.classList.remove('hidden');
         this.downloadSection.classList.add('hidden');
     }
 
@@ -252,9 +285,9 @@ class STLToSTEPConverter {
         console.log('STL Converter: Removing file');
         this.currentFile = null;
         this.convertedFile = null;
-        this.fileInfo.classList.add('hidden');
+        this.previewSection.classList.add('hidden');
+        this.generateSection.classList.add('hidden');
         this.downloadSection.classList.add('hidden');
-        this.generateBtn.disabled = true;
         this.fileInput.value = '';
         this.hideStatus();
     }
@@ -274,9 +307,11 @@ class STLToSTEPConverter {
 
         try {
             // Update UI for conversion process
-            this.generateBtn.disabled = true;
-            this.generateText.textContent = 'Converting...';
-            this.generateIcon.classList.add('animate-spin');
+            if (this.generateBtn) {
+                this.generateBtn.disabled = true;
+                this.generateText.textContent = 'Converting...';
+                this.generateIcon.classList.add('animate-spin');
+            }
             this.showStatus('Converting STL to STEP...', 'loading');
 
             // Read file as array buffer
@@ -330,9 +365,11 @@ class STLToSTEPConverter {
             this.showStatus(`Conversion failed: ${error.message}`, 'error');
         } finally {
             // Reset button state
-            this.generateBtn.disabled = false;
-            this.generateText.textContent = 'Convert to STEP';
-            this.generateIcon.classList.remove('animate-spin');
+            if (this.generateBtn) {
+                this.generateBtn.disabled = false;
+                this.generateText.textContent = 'Convert to STEP';
+                this.generateIcon.classList.remove('animate-spin');
+            }
         }
     }
 
@@ -424,6 +461,74 @@ class STLToSTEPConverter {
     hideStatus() {
         if (this.statusBar) {
             this.statusBar.classList.add('hidden');
+        }
+    }
+
+    showLoadingScreen() {
+        if (this.loadingScreen) {
+            this.loadingScreen.classList.remove('hidden');
+        }
+        if (this.mainInterface) {
+            this.mainInterface.classList.add('hidden');
+        }
+    }
+
+    hideLoadingScreen() {
+        if (this.loadingScreen) {
+            this.loadingScreen.classList.add('hidden');
+        }
+    }
+
+    showMainInterface() {
+        if (this.mainInterface) {
+            this.mainInterface.classList.remove('hidden');
+        }
+    }
+
+    showPreviewSection() {
+        if (this.previewSection) {
+            this.previewSection.classList.remove('hidden');
+        }
+    }
+
+    showGenerateSection() {
+        if (this.generateSection) {
+            this.generateSection.classList.remove('hidden');
+        }
+        if (this.generateBtn) {
+            this.generateBtn.disabled = false;
+        }
+    }
+
+    async load3DPreview(file) {
+        try {
+            console.log('STL Converter: Loading 3D preview...');
+            
+            // Initialize the 3D viewer if not already done
+            if (!this.threeViewer.isInitialized) {
+                this.threeViewer.init();
+            }
+            
+            // Read the STL file
+            const arrayBuffer = await this.readFileAsArrayBuffer(file);
+            const stlData = new Uint8Array(arrayBuffer);
+            
+            // Create part data for ThreeViewer
+            const partData = [{
+                name: file.name,
+                stl: stlData,
+                color: '#4f46e5', // Primary color
+                opacity: 1.0
+            }];
+            
+            // Load the part into the 3D viewer
+            this.threeViewer.loadParts(partData);
+            
+            console.log('STL Converter: 3D preview loaded successfully');
+            
+        } catch (error) {
+            console.error('STL Converter: Failed to load 3D preview:', error);
+            // Don't show error for preview failure - just log it
         }
     }
 }
