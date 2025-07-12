@@ -1,6 +1,7 @@
 // Import only what we need
 import { PythonRuntime } from './modules/python-runtime.js';
 import { ThreeViewer } from './modules/three-viewer.js';
+import { StatusManager } from './modules/status-manager.js';
 
 // STL to STEP Converter Application
 class STLToSTEPConverter {
@@ -59,21 +60,15 @@ class STLToSTEPConverter {
     initializeModules() {
         console.log('STL Converter: Initializing modules...');
         
-        // Create a simple status manager for the python runtime
-        const simpleStatusManager = {
-            updateStatus: (message, title, className) => {
-                console.log('Python Runtime:', message);
-                this.showStatus(message, 'loading');
-            },
-            consoleManager: {
-                appendToConsole: (message) => console.log('Console:', message),
-                appendToPythonConsole: (message) => console.log('Python:', message),
-                clearActiveConsole: () => console.log('Console cleared')
-            }
-        };
+        // Initialize status manager with UI elements
+        this.statusManager = new StatusManager({
+            statusBar: this.statusBar,
+            statusText: this.statusText,
+            statusIcon: this.statusIcon
+        });
         
-        // Initialize python runtime with our simple status manager
-        this.pythonRuntime = new PythonRuntime(simpleStatusManager);
+        // Initialize python runtime with status manager
+        this.pythonRuntime = new PythonRuntime(this.statusManager);
         
         // Initialize 3D viewer
         this.threeViewer = new ThreeViewer(this.previewContainer, this.previewPlaceholder);
@@ -163,21 +158,21 @@ class STLToSTEPConverter {
                 this.showGenerateSection();
             }
             
-            this.showStatus('Ready for STL to STEP conversion!', 'success');
+            this.statusManager.updateStatus('Ready for STL to STEP conversion!', 'STL Converter ready!');
             console.log('STL Converter: Initialization complete!');
             
         } catch (error) {
             console.error('STL Converter: Failed to initialize:', error);
             this.hideLoadingScreen();
             this.showMainInterface();
-            this.showStatus('Failed to initialize Python environment', 'error');
+            this.statusManager.updateStatus('Failed to initialize Python environment', 'Initialization failed');
         }
     }
 
     async loadConversionScript() {
         try {
             console.log('STL Converter: Loading conversion script...');
-            this.showStatus('Loading conversion script...', 'loading');
+            this.statusManager.updateStatus('Loading conversion script...', 'Loading script...');
             
             // Load the existing generate.py file
             const response = await fetch('./generate.py');
@@ -245,14 +240,14 @@ class STLToSTEPConverter {
         // Validate file type
         if (!file.name.toLowerCase().endsWith('.stl')) {
             console.log('STL Converter: Invalid file type');
-            this.showStatus('Please select a valid STL file', 'error');
+            this.statusManager.updateStatus('Please select a valid STL file', 'Invalid file type');
             return;
         }
 
         // Validate file size (limit to 50MB)
         if (file.size > 50 * 1024 * 1024) {
             console.log('STL Converter: File too large');
-            this.showStatus('File size too large. Please select a file smaller than 50MB', 'error');
+            this.statusManager.updateStatus('File size too large. Please select a file smaller than 50MB', 'File too large');
             return;
         }
 
@@ -271,7 +266,7 @@ class STLToSTEPConverter {
             this.showGenerateSection();
         }
         
-        this.hideStatus();
+        this.statusManager.hideStatus();
     }
 
     displayFileInfo(file) {
@@ -289,19 +284,19 @@ class STLToSTEPConverter {
         this.generateSection.classList.add('hidden');
         this.downloadSection.classList.add('hidden');
         this.fileInput.value = '';
-        this.hideStatus();
+        this.statusManager.hideStatus();
     }
 
     async convertFile() {
         console.log('STL Converter: Starting conversion');
         
         if (!this.currentFile || !this.isInitialized) {
-            this.showStatus('Please select a file and wait for initialization', 'error');
+            this.statusManager.updateStatus('Please select a file and wait for initialization', 'Not ready');
             return;
         }
 
         if (!this.pythonRuntime.pyodide) {
-            this.showStatus('Python runtime not ready', 'error');
+            this.statusManager.updateStatus('Python runtime not ready', 'Runtime not ready');
             return;
         }
 
@@ -312,7 +307,7 @@ class STLToSTEPConverter {
                 this.generateText.textContent = 'Converting...';
                 this.generateIcon.classList.add('animate-spin');
             }
-            this.showStatus('Converting STL to STEP...', 'loading');
+            this.statusManager.updateStatus('Converting STL to STEP...', 'Converting...');
 
             // Read file as array buffer
             console.log('STL Converter: Reading STL file...');
@@ -355,14 +350,14 @@ class STLToSTEPConverter {
             }
 
             // Show success and enable download
-            this.showStatus('Conversion completed successfully!', 'success');
+            this.statusManager.updateStatus('Conversion completed successfully!', 'Conversion complete!');
             this.downloadSection.classList.remove('hidden');
             
             console.log('STL Converter: Conversion completed successfully');
 
         } catch (error) {
             console.error('STL Converter: Conversion error:', error);
-            this.showStatus(`Conversion failed: ${error.message}`, 'error');
+            this.statusManager.updateStatus(`Conversion failed: ${error.message}`, 'Conversion failed');
         } finally {
             // Reset button state
             if (this.generateBtn) {
@@ -377,7 +372,7 @@ class STLToSTEPConverter {
         console.log('STL Converter: Downloading file');
         
         if (!this.convertedFile) {
-            this.showStatus('No converted file available', 'error');
+            this.statusManager.updateStatus('No converted file available', 'No file available');
             return;
         }
 
@@ -395,11 +390,11 @@ class STLToSTEPConverter {
             
             URL.revokeObjectURL(url);
             
-            this.showStatus('File downloaded successfully!', 'success');
+            this.statusManager.updateStatus('File downloaded successfully!', 'Download complete!');
             console.log('STL Converter: File downloaded successfully');
         } catch (error) {
             console.error('STL Converter: Download error:', error);
-            this.showStatus('Download failed', 'error');
+            this.statusManager.updateStatus('Download failed', 'Download failed');
         }
     }
 
@@ -420,49 +415,7 @@ class STLToSTEPConverter {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    showStatus(message, type) {
-        if (!this.statusBar || !this.statusText || !this.statusIcon) {
-            console.log('STL Converter: Status elements not found, logging to console:', message);
-            return;
-        }
-        
-        this.statusText.textContent = message;
-        this.statusBar.classList.remove('hidden');
-        
-        // Update icon based on type
-        this.statusIcon.innerHTML = '';
-        this.statusIcon.className = 'w-5 h-5';
-        
-        switch (type) {
-            case 'loading':
-                this.statusIcon.innerHTML = `
-                    <svg class="animate-spin text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                `;
-                break;
-            case 'success':
-                this.statusIcon.innerHTML = `
-                    <svg class="text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                `;
-                break;
-            case 'error':
-                this.statusIcon.innerHTML = `
-                    <svg class="text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                `;
-                break;
-        }
-    }
 
-    hideStatus() {
-        if (this.statusBar) {
-            this.statusBar.classList.add('hidden');
-        }
-    }
 
     showLoadingScreen() {
         if (this.loadingScreen) {
