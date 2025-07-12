@@ -30,8 +30,8 @@
                         }
                     },
                     animation: {
-                        'slide-in': 'slideIn 0.3s ease-out',
-                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-in': 'slideIn 0.15s ease-out',
+                        'fade-in': 'fadeIn 0.1s ease-out',
                         'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                     },
                     keyframes: {
@@ -69,9 +69,10 @@
                         STL to STEP Converter
                     </h1>
                 </div>
-                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-400">
-                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Pyodide Ready</span>
+                <!-- Status in Header -->
+                <div id="headerStatus" class="hidden md:flex items-center space-x-2 text-sm text-gray-400">
+                    <div id="headerStatusIcon" class="w-2 h-2 bg-gray-500 rounded-full"></div>
+                    <span id="headerStatusText">Initializing...</span>
                 </div>
             </div>
         </header>
@@ -80,25 +81,14 @@
         <main class="flex-1 px-4 sm:px-6 py-6 pb-20">
             <div class="max-w-4xl mx-auto">
                 
-                <!-- Status Bar -->
-                <div id="statusBar" class="mb-6 p-4 bg-gray-800/50 rounded-lg border border-gray-700 hidden">
-                    <div class="flex items-center space-x-3">
-                        <div id="statusIcon" class="w-5 h-5"></div>
-                        <span id="statusText" class="text-sm"></span>
-                    </div>
-                </div>
+
 
                 <!-- Loading Screen -->
                 <div id="loadingScreen" class="text-center py-16">
                     <div class="max-w-md mx-auto">
-                        <div class="w-16 h-16 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <svg class="w-8 h-8 text-primary-500 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl font-semibold mb-4 text-gray-200">Loading Conversion Environment</h2>
-                        <p class="text-gray-400 mb-2">Initializing Pyodide and loading conversion libraries...</p>
-                        <p class="text-sm text-gray-500">This may take up to 30 seconds on first load</p>
+                        <h2 class="text-2xl font-semibold mb-4 text-gray-200 animate-pulse-slow">Loading Conversion Environment</h2>
+                        <p class="text-gray-400 mb-2 animate-pulse-slow">Initializing Pyodide and loading conversion libraries...</p>
+                        <p class="text-sm text-gray-500 animate-pulse-slow">This may take up to 30 seconds on first load</p>
                         <div class="mt-6 p-4">
                             <div class="flex items-center justify-center space-x-2">
                                 <div class="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
@@ -110,11 +100,36 @@
                 </div>
 
                 <!-- Main Interface -->
-                <div id="mainInterface" class="max-w-4xl mx-auto space-y-6 hidden">
+                <div id="mainInterface" class="max-w-4xl mx-auto hidden opacity-0 transition-all duration-100">
+                    
+                    <!-- Download Section Placeholder -->
+                    <div id="downloadPlaceholder" class="scroll-mt-20 mb-6">
+                        <div class="border-2 border-dashed border-gray-600/50 rounded-lg p-3 bg-gray-800/20">
+                            <div class="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-gray-600/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="text-center sm:text-left">
+                                        <p class="font-medium text-gray-500">Download will appear here</p>
+                                        <p class="text-sm text-gray-500">After conversion completes</p>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-600/30 text-gray-500 px-6 py-3 rounded-lg flex items-center space-x-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    <span class="font-semibold">Download STEP</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Download Section - Positioned at the top for prominence -->
-                    <div id="downloadSection" class="hidden scroll-mt-20">
-                        <div class="bg-green-500/10 border border-green-500/20 rounded-lg p-4 animate-fade-in">
+                    <div id="downloadSection" class="scroll-mt-20 transition-opacity duration-200 opacity-0 mb-6 hidden">
+                        <div class="bg-green-500/10 border border-green-500/20 rounded-lg p-3 m-px">
                             <div class="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -138,7 +153,7 @@
                     </div>
                     
                     <!-- Upload Section -->
-                    <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
+                    <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 transition-all duration-150 mt-6">
                         <h2 class="text-xl font-semibold mb-4 flex items-center">
                             <svg class="w-5 h-5 mr-2 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
@@ -169,7 +184,7 @@
                     </div>
 
                     <!-- 3D Preview Section -->
-                    <div id="previewSection" class="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 hidden">
+                    <div id="previewSection" class="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 hidden opacity-0 transition-all duration-100 mt-6">
                         <h2 class="text-xl font-semibold mb-4 flex items-center">
                             <svg class="w-5 h-5 mr-2 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -216,7 +231,7 @@
                     </div>
 
                     <!-- Generate Button -->
-                    <div id="generateSection" class="hidden">
+                    <div id="generateSection" class="hidden opacity-0 transition-all duration-100 mt-6">
                         <button id="generateBtn" class="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center space-x-2" disabled>
                             <svg id="generateIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>

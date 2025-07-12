@@ -32,10 +32,11 @@ class STLToSTEPConverter {
         this.generateIcon = document.getElementById('generateIcon');
         this.generateText = document.getElementById('generateText');
         this.downloadSection = document.getElementById('downloadSection');
+        this.downloadPlaceholder = document.getElementById('downloadPlaceholder');
         this.downloadBtn = document.getElementById('downloadBtn');
-        this.statusBar = document.getElementById('statusBar');
-        this.statusIcon = document.getElementById('statusIcon');
-        this.statusText = document.getElementById('statusText');
+        this.headerStatus = document.getElementById('headerStatus');
+        this.headerStatusIcon = document.getElementById('headerStatusIcon');
+        this.headerStatusText = document.getElementById('headerStatusText');
         this.loadingScreen = document.getElementById('loadingScreen');
         this.mainInterface = document.getElementById('mainInterface');
         this.previewSection = document.getElementById('previewSection');
@@ -62,9 +63,9 @@ class STLToSTEPConverter {
         
         // Initialize status manager with UI elements
         this.statusManager = new StatusManager({
-            statusBar: this.statusBar,
-            statusText: this.statusText,
-            statusIcon: this.statusIcon
+            statusBar: this.headerStatus,
+            statusText: this.headerStatusText,
+            statusIcon: this.headerStatusIcon
         });
         
         // Initialize python runtime with status manager
@@ -152,7 +153,7 @@ class STLToSTEPConverter {
                 this.showGenerateSection();
             }
             
-            this.statusManager.updateStatus('Ready for STL to STEP conversion!', 'STL Converter ready!');
+            this.statusManager.updateStatus('Ready for STL to STEP conversion!', 'Ready for conversion');
             console.log('STL Converter: Initialization complete!');
             
         } catch (error) {
@@ -260,25 +261,49 @@ class STLToSTEPConverter {
             this.showGenerateSection();
         }
         
-        this.statusManager.hideStatus();
+        // Status now always visible in header
     }
 
     displayFileInfo(file) {
         console.log('STL Converter: Displaying file info');
         this.fileName.textContent = file.name;
         this.fileSize.textContent = this.formatFileSize(file.size);
-        this.downloadSection.classList.add('hidden');
+        this.downloadSection.classList.add('opacity-0', 'hidden');
+        
+        // Show placeholder when file is loaded
+        if (this.downloadPlaceholder) {
+            this.downloadPlaceholder.classList.remove('hidden');
+        }
     }
 
     removeFile() {
         console.log('STL Converter: Removing file');
         this.currentFile = null;
         this.convertedFile = null;
-        this.previewSection.classList.add('hidden');
-        this.generateSection.classList.add('hidden');
-        this.downloadSection.classList.add('hidden');
+        
+        // Hide sections with opacity first, then add hidden class
+        this.previewSection.classList.add('opacity-0');
+        this.generateSection.classList.add('opacity-0');
+        this.downloadSection.classList.add('opacity-0');
+        
+        // Show placeholder and hide download section
+        if (this.downloadPlaceholder) {
+            this.downloadPlaceholder.classList.remove('hidden');
+        }
+        
+        // Remove animation classes
+        this.previewSection.classList.remove('animate-fade-in');
+        
+        // Add hidden class after a brief delay
+        setTimeout(() => {
+            this.previewSection.classList.add('hidden');
+            this.generateSection.classList.add('hidden');
+            this.downloadSection.classList.add('hidden');
+        }, 200); // Match the download section fade duration
+        
         this.fileInput.value = '';
-        this.statusManager.hideStatus();
+        // Status remains visible in header, revert to ready state
+        this.statusManager.setReadyState();
     }
 
     async convertFile() {
@@ -345,7 +370,18 @@ class STLToSTEPConverter {
 
             // Show success and enable download
             this.statusManager.updateStatus('Conversion completed successfully!', 'Conversion complete!');
+            
+            // Hide placeholder and show download section
+            if (this.downloadPlaceholder) {
+                this.downloadPlaceholder.classList.add('hidden');
+            }
+            
             this.downloadSection.classList.remove('hidden');
+            
+            // Trigger fade-in animation
+            requestAnimationFrame(() => {
+                this.downloadSection.classList.remove('opacity-0');
+            });
             
             // Smooth scroll to the top to show the download section
             setTimeout(() => {
@@ -353,7 +389,7 @@ class STLToSTEPConverter {
                     top: 0, 
                     behavior: 'smooth' 
                 });
-            }, 100); // Small delay to ensure element is fully rendered
+            }, 50); // Quick delay for fade-in
             
             console.log('STL Converter: Conversion completed successfully');
 
@@ -437,18 +473,32 @@ class STLToSTEPConverter {
     showMainInterface() {
         if (this.mainInterface) {
             this.mainInterface.classList.remove('hidden');
+            // Trigger fade-in animation
+            requestAnimationFrame(() => {
+                this.mainInterface.classList.remove('opacity-0');
+                this.mainInterface.classList.add('animate-fade-in');
+            });
         }
     }
 
     showPreviewSection() {
         if (this.previewSection) {
             this.previewSection.classList.remove('hidden');
+            // Trigger fade-in animation
+            requestAnimationFrame(() => {
+                this.previewSection.classList.remove('opacity-0');
+                this.previewSection.classList.add('animate-fade-in');
+            });
         }
     }
 
     showGenerateSection() {
         if (this.generateSection) {
             this.generateSection.classList.remove('hidden');
+            // Trigger fade-in animation
+            requestAnimationFrame(() => {
+                this.generateSection.classList.remove('opacity-0');
+            });
         }
         if (this.generateBtn) {
             this.generateBtn.disabled = false;

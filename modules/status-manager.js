@@ -11,6 +11,7 @@ export class StatusManager {
         this.statusBar = uiElements.statusBar;
         this.statusText = uiElements.statusText;
         this.statusIcon = uiElements.statusIcon;
+        this.readyTimeoutId = null;
     }
 
     // Unified status update method
@@ -38,59 +39,77 @@ export class StatusManager {
     updateStatusIcon(message) {
         if (!this.statusIcon) return;
         
+        // Clear any existing timeout
+        if (this.readyTimeoutId) {
+            clearTimeout(this.readyTimeoutId);
+            this.readyTimeoutId = null;
+        }
+        
         this.statusIcon.innerHTML = '';
-        this.statusIcon.className = 'w-5 h-5';
+        this.statusIcon.className = 'w-2 h-2 rounded-full';
         
         const lowerMessage = message.toLowerCase();
         
-        // Loading/Processing states
+        // Loading/Processing states - spinning blue dot
         if (lowerMessage.includes('loading') || lowerMessage.includes('converting') || lowerMessage.includes('installing') || 
             lowerMessage.includes('setting up') || lowerMessage.includes('starting') || 
             message.includes('🔄') || message.includes('⚙️') || message.includes('📦')) {
+            this.statusIcon.className = 'w-3 h-3';
             this.statusIcon.innerHTML = `
                 <svg class="animate-spin text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
             `;
-        // Success states
-        } else if (lowerMessage.includes('success') || lowerMessage.includes('complete') || lowerMessage.includes('ready') || 
-                   lowerMessage.includes('downloaded') || lowerMessage.includes('installed') || 
-                   message.includes('✅') || message.includes('🚀')) {
+        // Conversion complete - show tick then revert to ready state after 5 seconds
+        } else if (lowerMessage.includes('conversion completed') || lowerMessage.includes('complete!')) {
+            this.statusIcon.className = 'w-3 h-3';
             this.statusIcon.innerHTML = `
                 <svg class="text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
             `;
-        // Error states
+            
+            // After 5 seconds, revert to ready state
+            this.readyTimeoutId = setTimeout(() => {
+                this.setReadyState();
+            }, 5000);
+        // Ready state - green dot
+        } else if (lowerMessage.includes('ready')) {
+            this.statusIcon.className = 'w-2 h-2 bg-green-500 rounded-full';
+            this.statusIcon.innerHTML = '';
+        // Error states - red dot
         } else if (lowerMessage.includes('error') || lowerMessage.includes('failed') || lowerMessage.includes('not ready') || 
                    lowerMessage.includes('too large') || lowerMessage.includes('invalid') || 
                    message.includes('❌')) {
-            this.statusIcon.innerHTML = `
-                <svg class="text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            `;
-        // Warning states
+            this.statusIcon.className = 'w-2 h-2 bg-red-500 rounded-full';
+            this.statusIcon.innerHTML = '';
+        // Warning states - yellow dot
         } else if (lowerMessage.includes('please') || lowerMessage.includes('select') || lowerMessage.includes('wait') || 
                    lowerMessage.includes('no converted') || lowerMessage.includes('not available')) {
-            this.statusIcon.innerHTML = `
-                <svg class="text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-            `;
-        // Default info icon for any other messages
+            this.statusIcon.className = 'w-2 h-2 bg-yellow-500 rounded-full';
+            this.statusIcon.innerHTML = '';
+        // Default initializing state - gray dot
         } else {
-            this.statusIcon.innerHTML = `
-                <svg class="text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-            `;
+            this.statusIcon.className = 'w-2 h-2 bg-gray-500 rounded-full';
+            this.statusIcon.innerHTML = '';
         }
     }
     
     hideStatus() {
-        if (this.statusBar) {
-            this.statusBar.classList.add('hidden');
+        // Header status should always remain visible
+        // This method is kept for compatibility but does nothing
+    }
+    
+    setReadyState() {
+        if (this.statusText) {
+            this.statusText.textContent = 'Ready for conversion';
         }
+        
+        if (this.statusIcon) {
+            this.statusIcon.className = 'w-2 h-2 bg-green-500 rounded-full';
+            this.statusIcon.innerHTML = '';
+        }
+        
+        console.log('Status: Ready for conversion');
     }
 } 
