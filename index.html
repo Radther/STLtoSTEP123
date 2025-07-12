@@ -57,7 +57,7 @@
         
         
         <!-- Header -->
-        <header class="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 px-6 py-4">
+        <header class="sticky top-0 z-10 bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 px-6 py-4">
             <div class="max-w-6xl mx-auto flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <div class="w-8 h-8 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
@@ -78,7 +78,7 @@
         </header>
 
         <!-- Main Content -->
-        <main class="flex-1 px-4 sm:px-6 py-6 pb-20">
+        <main class="flex-1 px-4 sm:px-6 py-6 pb-6">
             <div class="max-w-4xl mx-auto">
                 
 
@@ -142,7 +142,7 @@
                                         <p class="text-sm text-green-300">Your STEP file is ready</p>
                                     </div>
                                 </div>
-                                <button id="downloadBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center space-x-2 shadow-lg">
+                                <button id="downloadBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-all duration-200 flex items-center space-x-2 shadow-lg">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
@@ -232,7 +232,7 @@
 
                     <!-- Generate Button -->
                     <div id="generateSection" class="hidden opacity-0 transition-all duration-100 mt-6">
-                        <button id="generateBtn" class="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center space-x-2" disabled>
+                        <button id="generateBtn" class="w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2" disabled>
                             <svg id="generateIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
@@ -246,7 +246,7 @@
         </main>
 
         <!-- Footer -->
-        <footer class="bg-gray-800/50 backdrop-blur-sm border-t border-gray-700 px-4 sm:px-6 py-4">
+        <footer class="sticky bottom-0 z-10 bg-gray-800/50 backdrop-blur-sm border-t border-gray-700 px-4 sm:px-6 py-4">
             <div class="max-w-6xl mx-auto flex items-center justify-between text-sm text-gray-400">
                 <div>
                     <p>Powered by Pyodide & build123d</p>

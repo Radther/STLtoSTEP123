@@ -261,6 +261,17 @@ class STLToSTEPConverter {
             this.showGenerateSection();
         }
         
+        // Scroll to preview section after file is loaded and animations are triggered
+        setTimeout(() => {
+            const previewSection = document.getElementById('previewSection');
+            if (previewSection) {
+                previewSection.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }
+        }, 300); // Delay to allow animations to complete
+        
         // Status now always visible in header
     }
 
