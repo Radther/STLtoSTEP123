@@ -110,12 +110,6 @@ class STLToSTEPConverter {
             this.handleDrop(e);
         });
         
-        // Click to browse
-        this.dropZone.addEventListener('click', () => {
-            console.log('STL Converter: Drop zone clicked');
-            this.fileInput.click();
-        });
-        
         // Remove file
         if (this.removeFileBtn) {
             this.removeFileBtn.addEventListener('click', () => this.removeFile());
@@ -352,6 +346,14 @@ class STLToSTEPConverter {
             // Show success and enable download
             this.statusManager.updateStatus('Conversion completed successfully!', 'Conversion complete!');
             this.downloadSection.classList.remove('hidden');
+            
+            // Smooth scroll to the top to show the download section
+            setTimeout(() => {
+                window.scrollTo({ 
+                    top: 0, 
+                    behavior: 'smooth' 
+                });
+            }, 100); // Small delay to ensure element is fully rendered
             
             console.log('STL Converter: Conversion completed successfully');
 

@@ -53,7 +53,7 @@
     
     
     <!-- Main Container -->
-    <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex flex-col">
+    <div class="min-h-screen bg-gray-900 flex flex-col">
         
         
         <!-- Header -->
@@ -77,7 +77,7 @@
         </header>
 
         <!-- Main Content -->
-        <main class="flex-1 px-6 py-8 pb-16">
+        <main class="flex-1 px-4 sm:px-6 py-6 pb-20">
             <div class="max-w-4xl mx-auto">
                 
                 <!-- Status Bar -->
@@ -110,7 +110,32 @@
                 </div>
 
                 <!-- Main Interface -->
-                <div id="mainInterface" class="max-w-4xl mx-auto space-y-8 hidden">
+                <div id="mainInterface" class="max-w-4xl mx-auto space-y-6 hidden">
+                    
+                    <!-- Download Section - Positioned at the top for prominence -->
+                    <div id="downloadSection" class="hidden scroll-mt-20">
+                        <div class="bg-green-500/10 border border-green-500/20 rounded-lg p-4 animate-fade-in">
+                            <div class="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
+                                    <div class="text-center sm:text-left">
+                                        <p class="font-medium text-green-200">Conversion Complete!</p>
+                                        <p class="text-sm text-green-300">Your STEP file is ready</p>
+                                    </div>
+                                </div>
+                                <button id="downloadBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center space-x-2 shadow-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    <span class="font-semibold">Download STEP</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Upload Section -->
                     <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
@@ -200,43 +225,13 @@
                         </button>
                     </div>
 
-                    <!-- Download Section -->
-                    <div id="downloadSection" class="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 hidden">
-                        <h2 class="text-xl font-semibold mb-4 flex items-center">
-                            <svg class="w-5 h-5 mr-2 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            Download STEP File
-                        </h2>
-                        
-                        <div class="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p class="font-medium text-green-200">Conversion Complete!</p>
-                                        <p class="text-sm text-green-300">Your STEP file is ready for download</p>
-                                    </div>
-                                </div>
-                                <button id="downloadBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    <span>Download STEP</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </div>
         </main>
 
         <!-- Footer -->
-        <footer class="bg-gray-800/50 backdrop-blur-sm border-t border-gray-700 px-6 py-4">
+        <footer class="bg-gray-800/50 backdrop-blur-sm border-t border-gray-700 px-4 sm:px-6 py-4">
             <div class="max-w-6xl mx-auto flex items-center justify-between text-sm text-gray-400">
                 <div>
                     <p>Powered by Pyodide & build123d</p>
